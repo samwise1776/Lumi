@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.lumicode.Lumi</id>
+  <name>Lumi</name>
+  <summary>Run programs written in the Lumi programming language</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Lumi is a small programming language with variables, arithmetic,
+      formatted printing, conditionals, constructors, methods, and simple
+      graphical applications.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.lumicode.Lumi.desktop</launchable>
+  <provides>
+    <mediatype>application/x-lumi</mediatype>
+  </provides>
+  <releases>
+    <release version="0.1.0" date="2026-07-23"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

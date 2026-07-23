@@ -1,0 +1,26 @@
+Add System.sleep(1000) to sleep 1k milliseconds
+Add System.findval(varName) to find the value of a variable and make it so you can print it like that as well
+Add print f"%s" + var to put the variable right there
+Add print f"Hello, *var*" to print Hello, and the variables content
+Add System.ctor(Hello) {
+    print "Hello"
+} to import Hello then it will run that code, Also in that code you can put .say {
+    print "Hello"
+} to if you say Hello.say() it will run that also you can add a message variable like this
+.say(message) {
+    print message
+}
+Add frame.create("Hello") and frame.size=700,900 and frame.visible(true) to make a LFrame in lumi
+Add LButton.new.create("Hello").varname.helloButton to create a Button that says Hello and its variable name is helloButton
+Add helloButton.action() {
+    print "Hello"
+}
+Add textB textarea = "" to make a blank text box by the varname textarea
+Add textarea.read.readFor("Hello") to read for Hello and add textarea.read(name) which creates a variable by the name 'name' and its value is whats in the text box
+Add if statements and else Example:
+name = "Ray"
+
+if name == "Ray" then
+print "Hello *name*"
+end
+Add arethmetic as well

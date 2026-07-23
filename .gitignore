@@ -1,0 +1,18 @@
+# Java and local build output
+build/
+*.class
+*.jar
+
+# Flatpak Builder state and generated repositories
+.flatpak-builder/
+.flatpak-builder-cache/
+
+# Generated distributable files
+*.flatpak
+*.vsix
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+*~

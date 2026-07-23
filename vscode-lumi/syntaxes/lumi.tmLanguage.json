@@ -1,0 +1,95 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Lumi",
+  "scopeName": "source.lumi",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#builtins" },
+    { "include": "#constants" },
+    { "include": "#numbers" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.lumi",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.lumi",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.lumi",
+              "match": "\\\\(?:[nrt\"\\\\]|u[0-9a-fA-F]{4})"
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.lumi",
+          "match": "\\b(?:if|then|else|end|while|for|return|fun)\\b"
+        },
+        {
+          "name": "keyword.other.lumi",
+          "match": "\\b(?:print|let|import)\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.class.lumi",
+          "match": "\\b(?:System|frame|LButton|Label|textB)\\b"
+        },
+        {
+          "name": "support.function.lumi",
+          "match": "\\b(?:sleep|findval|ctor|create|varname|visible|icon|action|read|readFor)\\b"
+        },
+        {
+          "name": "entity.name.function.lumi",
+          "match": "(?<=\\.)[A-Za-z_]\\w*(?=\\s*\\()"
+        },
+        {
+          "name": "storage.type.string.lumi",
+          "match": "\\bf(?=\")"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.lumi",
+          "match": "\\b(?:true|false|null)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.lumi",
+          "match": "\\b(?:0[xX][0-9a-fA-F]+|\\d+(?:\\.\\d+)?)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.lumi",
+          "match": "(?:==|!=|<=|>=|&&|\\|\\||[+\\-*/%=<>!])"
+        }
+      ]
+    }
+  }
+}

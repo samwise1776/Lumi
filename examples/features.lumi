@@ -1,0 +1,27 @@
+# Variables and value lookup
+let name = "Ray"
+print System.findval(name)
+print f"%s" + name
+print f"Hello, *name*"
+
+# Wait 10 milliseconds in this example
+System.sleep(10)
+
+# Constructors run their top-level code and can contain methods
+System.ctor(Hello) {
+    print "Hello constructor"
+
+    .say {
+        print "Hello"
+    }
+
+    .sayTo(message) {
+        print message
+    }
+}
+
+import Hello
+Hello.say()
+Hello.sayTo("Hello from a method parameter")
+
+

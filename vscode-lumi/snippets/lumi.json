@@ -1,0 +1,45 @@
+{
+  "Print text": {
+    "prefix": "print",
+    "body": [
+      "print \"${1:Hello from Lumi!}\""
+    ],
+    "description": "Print a value"
+  },
+  "If statement": {
+    "prefix": "if",
+    "body": [
+      "if ${1:name} == ${2:\"value\"} then",
+      "    ${3:print \"Matched\"}",
+      "else",
+      "    ${4:print \"Not matched\"}",
+      "end"
+    ],
+    "description": "Lumi if/else statement"
+  },
+  "Create frame": {
+    "prefix": "frame",
+    "body": [
+      "frame.create(\"${1:Hello}\")",
+      "frame.size=${2:700},${3:900}",
+      "frame.icon(\"${4:icon.png}\")",
+      "$0",
+      "frame.visible(true)"
+    ],
+    "description": "Create and show a Lumi frame"
+  },
+  "Import constructor": {
+    "prefix": "import",
+    "body": [
+      "import ${1:Hello}"
+    ],
+    "description": "Run a registered Lumi constructor"
+  },
+  "Create label": {
+    "prefix": "label",
+    "body": [
+      "Label.create(\"${1:Hello}\").varname(${2:helloLabel})"
+    ],
+    "description": "Create a named Lumi label"
+  }
+}

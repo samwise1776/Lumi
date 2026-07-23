@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Lumi
+GenericName=Lumi Language Runner
+Comment=Run programs written in the Lumi programming language
+Exec=lumi-flatpak %f
+Icon=io.lumicode.Lumi
+Terminal=false
+MimeType=application/x-lumi;
+Categories=Development;Utility;
+Keywords=Lumi;Programming;Language;Code;
+StartupNotify=true

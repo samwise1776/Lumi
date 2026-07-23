@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-lumi">
+    <comment>Lumi source code</comment>
+    <icon name="application-x-lumi"/>
+    <glob pattern="*.lumi"/>
+  </mime-type>
+</mime-info>

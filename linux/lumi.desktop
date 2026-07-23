@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Lumi
+Comment=Run a Lumi source file
+Icon=application-x-lumi
+Exec=lumi run %f
+Terminal=true
+NoDisplay=true
+MimeType=application/x-lumi;
+Categories=Development;

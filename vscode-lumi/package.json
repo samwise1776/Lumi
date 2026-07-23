@@ -1,0 +1,81 @@
+{
+  "name": "lumi-language",
+  "displayName": "Lumi Language",
+  "description": "Language support and a run command for Lumi source files.",
+  "version": "0.1.0",
+  "publisher": "lumicode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onCommand:lumi.runFile"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "lumi",
+        "aliases": [
+          "Lumi",
+          "lumi"
+        ],
+        "extensions": [
+          ".lumi"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/lumi-file.svg",
+          "dark": "./icons/lumi-file.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lumi",
+        "scopeName": "source.lumi",
+        "path": "./syntaxes/lumi.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "lumi",
+        "path": "./snippets/lumi.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "lumi.runFile",
+        "title": "Lumi: Run Current File",
+        "icon": "$(play)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "lumi.runFile",
+          "when": "editorLangId == lumi",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "lumi.runFile",
+          "when": "editorLangId == lumi",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "lumi.runFile",
+        "key": "ctrl+f5",
+        "mac": "cmd+f5",
+        "when": "editorLangId == lumi"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+import Hello
+
+name = "Ray"
+first = 10
+second = 5
+answer = first + second * 2
+print answer
+
+if name == "Ray" then
+    print "Hello *name*"
+else
+    print "I do not know you"
+end
+
+frame.create("Hello")
+frame.size=700,900
+frame.icon("../icon.png")
+
+Label.create("Hello").varname(helloLabel)
+LButton.new.create("Hello").varname.helloButton
+helloButton.action() {
+    print "Hello"
+}
+
+textB textarea = ""
+textarea.read.readFor("Ray")
+textarea.read(nameFromBox)
+print "Text box says *nameFromBox*"
+
+frame.visible(true)

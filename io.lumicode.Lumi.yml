@@ -1,0 +1,41 @@
+id: io.lumicode.Lumi
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk25
+command: lumi-flatpak
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --filesystem=host:ro
+build-options:
+  prepend-path: /usr/lib/sdk/openjdk25/bin
+modules:
+  - name: lumi
+    buildsystem: simple
+    build-commands:
+      - mkdir -p classes
+      - javac --release 17 -d classes Lumi.java
+      - jar --create --file lumi.jar --main-class Lumi -C classes .
+      - jlink --add-modules java.base,java.desktop --strip-debug --no-man-pages --no-header-files --compress=zip-6 --output /app/jre
+      - install -Dm644 lumi.jar /app/share/lumi/lumi.jar
+      - install -Dm755 lumi-flatpak /app/bin/lumi-flatpak
+      - install -Dm644 io.lumicode.Lumi.desktop /app/share/applications/io.lumicode.Lumi.desktop
+      - install -Dm644 io.lumicode.Lumi.metainfo.xml /app/share/metainfo/io.lumicode.Lumi.metainfo.xml
+      - install -Dm644 io.lumicode.Lumi.xml /app/share/mime/packages/io.lumicode.Lumi.xml
+      - install -Dm644 lumi-file.svg /app/share/icons/hicolor/scalable/apps/io.lumicode.Lumi.svg
+    sources:
+      - type: file
+        path: src/Lumi.java
+      - type: file
+        path: flatpak/lumi-flatpak
+      - type: file
+        path: flatpak/io.lumicode.Lumi.desktop
+      - type: file
+        path: flatpak/io.lumicode.Lumi.metainfo.xml
+      - type: file
+        path: flatpak/io.lumicode.Lumi.xml
+      - type: file
+        path: assets/lumi-file.svg
