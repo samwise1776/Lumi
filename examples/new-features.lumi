@@ -1,0 +1,10 @@
+frame.create("Hello")
+frame.visible(true)
+
+Label.create("Hello, Ray").varname(helloLabel)
+frame.size=800,900
+
+key.listen(ESC) {
+    frame.visible(false)
+    hell
+}

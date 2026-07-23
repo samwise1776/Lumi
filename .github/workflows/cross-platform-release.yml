@@ -37,9 +37,9 @@ jobs:
       - name: Compile Lumi
         shell: bash
         run: |
-          mkdir -p package-input
-          javac --release 17 -d package-input src/Lumi.java
-          jar --create --file package-input/lumi.jar --main-class Lumi -C package-input Lumi.class -C package-input 'Lumi$ArithmeticParser.class' -C package-input 'Lumi$Block.class' -C package-input 'Lumi$ConditionalBlock.class' -C package-input 'Lumi$LumiButton.class' -C package-input 'Lumi$LumiClass.class' -C package-input 'Lumi$LumiMethod.class'
+          mkdir -p classes package-input
+          javac --release 17 -d classes src/Lumi.java
+          jar --create --file package-input/lumi.jar --main-class Lumi -C classes .
 
       - name: Package Unix application
         if: runner.os == 'Linux'
@@ -51,7 +51,7 @@ jobs:
             --input package-input \
             --main-jar lumi.jar \
             --name Lumi \
-            --app-version 0.1.3 \
+            --app-version 0.2.0 \
             --description "Lumi programming language" \
             --vendor "Lumi contributors" \
             --icon icon.png
@@ -67,7 +67,7 @@ jobs:
             --input package-input `
             --main-jar lumi.jar `
             --name Lumi `
-            --app-version 0.1.3 `
+            --app-version 0.2.0 `
             --description "Lumi programming language" `
             --vendor "Lumi contributors" `
             --win-console
@@ -83,7 +83,7 @@ jobs:
             --input package-input \
             --main-jar lumi.jar \
             --name Lumi \
-            --app-version 1.3.0 \
+            --app-version 2.0.0 \
             --description "Lumi programming language" \
             --vendor "Lumi contributors" \
             --mac-package-name Lumi \

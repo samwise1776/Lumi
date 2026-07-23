@@ -2,7 +2,8 @@
 
 Lumi is a small programming language written in Java. It supports variables,
 arithmetic, formatted printing, conditionals, constructors, methods, sleeping,
-and simple Swing interfaces with frames, labels, buttons, and text boxes.
+file creation, user input, and Swing interfaces with frames, labels, buttons,
+text boxes, panels, positioning, and keyboard actions.
 
 ## Example
 
@@ -75,7 +76,9 @@ Install the VS Code extension:
 ## Syntax examples
 
 See [`examples/features.lumi`](examples/features.lumi) and
-[`examples/gui-and-if.lumi`](examples/gui-and-if.lumi).
+[`examples/gui-and-if.lumi`](examples/gui-and-if.lumi). The complete set of
+newer file, input, panel, positioning, and keyboard features is demonstrated in
+[`examples/new-features.lumi`](examples/new-features.lumi).
 
 ## License
 

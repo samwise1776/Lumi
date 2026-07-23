@@ -24,3 +24,14 @@ if name == "Ray" then
 print "Hello *name*"
 end
 Add arethmetic as well
+Add file.create("Hello.txt","Hello")
+Add a = {
+    "Hello"
+    +"Ray"
+}
+Add label.setX(-10) or setX(+10), setX(*10), setX(10), and the same with setY() and the same for every component
+Add key.listen(L) {
+    print "You pressed L"
+}
+Add Panel p = (label,button) And p.add(Hello)
+Add input("Enter your name: " (name))

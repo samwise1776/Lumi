@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -11,9 +13,13 @@ import java.awt.GraphicsEnvironment;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 public class Lumi {
@@ -22,12 +28,16 @@ public class Lumi {
     private static final Map<String, LumiButton> buttons = new HashMap<>();
     private static final Map<String, JLabel> labels = new HashMap<>();
     private static final Map<String, JTextField> textBoxes = new HashMap<>();
+    private static final Map<String, JPanel> panels = new HashMap<>();
+    private static final Map<String, JComponent> components = new HashMap<>();
+    private static final Map<String, List<String>> keyActions = new HashMap<>();
     private static JFrame frame;
     private static String frameTitle = "Lumi";
     private static int frameWidth = 700;
     private static int frameHeight = 900;
     private static Path scriptDirectory = Path.of("").toAbsolutePath();
     private static Path frameIconPath;
+    private static int nextComponentY = 10;
 
     private record LumiMethod(String parameter, List<String> body) {}
     private record LumiButton(String text, JButton component) {}
@@ -96,6 +106,18 @@ public class Lumi {
                 continue;
             }
 
+            Matcher multilineAssignment = Pattern
+                    .compile("(?:(?:let|var)\\s+)?([A-Za-z_]\\w*)\\s*=\\s*\\{")
+                    .matcher(line);
+            if (multilineAssignment.matches()) {
+                Block block = readBlock(lines, index);
+                variables.put(
+                        multilineAssignment.group(1),
+                        concatenateBlock(block.lines(), locals));
+                index = block.endIndex();
+                continue;
+            }
+
             Matcher constructor = Pattern
                     .compile("System\\.ctor\\(([A-Za-z_]\\w*)\\)\\s*\\{")
                     .matcher(line);
@@ -112,6 +134,16 @@ public class Lumi {
             if (action.matches()) {
                 Block block = readBlock(lines, index);
                 addButtonAction(action.group(1), block.lines());
+                index = block.endIndex();
+                continue;
+            }
+
+            Matcher keyListener = Pattern
+                    .compile("key\\.listen\\(([^)]+)\\)\\s*\\{")
+                    .matcher(line);
+            if (keyListener.matches()) {
+                Block block = readBlock(lines, index);
+                registerKeyAction(keyListener.group(1).trim(), block.lines());
                 index = block.endIndex();
                 continue;
             }
@@ -138,6 +170,22 @@ public class Lumi {
                 .matcher(line);
         if (importConstructor.matches()) {
             importConstructor(importConstructor.group(1), locals);
+            return;
+        }
+
+        Matcher fileCreate = Pattern
+                .compile("file\\.create\\(\"([^\"]+)\",\\s*\"(.*)\"\\)\\s*;?")
+                .matcher(line);
+        if (fileCreate.matches()) {
+            createFile(fileCreate.group(1), fileCreate.group(2), locals);
+            return;
+        }
+
+        Matcher input = Pattern
+                .compile("input\\(\"(.*)\"\\s*\\(([A-Za-z_]\\w*)\\)\\s*\\)\\s*;?")
+                .matcher(line);
+        if (input.matches()) {
+            variables.put(input.group(2), readInput(interpolate(input.group(1), locals)));
             return;
         }
 
@@ -190,6 +238,33 @@ public class Lumi {
                 .matcher(line);
         if (labelCreate.matches()) {
             createLabel(labelCreate.group(2), labelCreate.group(1));
+            return;
+        }
+
+        Matcher panelCreate = Pattern
+                .compile("Panel\\s+([A-Za-z_]\\w*)\\s*=\\s*\\((.*?)\\)\\s*;?")
+                .matcher(line);
+        if (panelCreate.matches()) {
+            createPanel(panelCreate.group(1), panelCreate.group(2));
+            return;
+        }
+
+        Matcher panelAdd = Pattern
+                .compile("([A-Za-z_]\\w*)\\.add\\(([A-Za-z_]\\w*)\\)\\s*;?")
+                .matcher(line);
+        if (panelAdd.matches() && panels.containsKey(panelAdd.group(1))) {
+            addToPanel(panelAdd.group(1), panelAdd.group(2));
+            return;
+        }
+
+        Matcher setPosition = Pattern
+                .compile("([A-Za-z_]\\w*)\\.set([XY])\\(([+\\-*]?\\d+)\\)\\s*;?")
+                .matcher(line);
+        if (setPosition.matches()) {
+            setComponentPosition(
+                    setPosition.group(1),
+                    setPosition.group(2),
+                    setPosition.group(3));
             return;
         }
 
@@ -257,6 +332,17 @@ public class Lumi {
         }
 
         System.out.println("Unknown instruction: " + line);
+    }
+
+    private static String concatenateBlock(List<String> lines, Map<String, Object> locals) {
+        StringBuilder result = new StringBuilder();
+        for (String rawLine : lines) {
+            String part = clean(rawLine);
+            if (part.isBlank()) continue;
+            if (part.startsWith("+")) part = part.substring(1).trim();
+            result.append(display(evaluate(part, locals)));
+        }
+        return result.toString();
     }
 
     private static Object evaluatePrint(String expression, Map<String, Object> locals) {
@@ -513,15 +599,19 @@ public class Lumi {
 
     private static void createFrame(String title) throws Exception {
         frameTitle = title;
+        nextComponentY = 10;
         if (GraphicsEnvironment.isHeadless()) return;
         SwingUtilities.invokeAndWait(() -> {
             if (frame != null) frame.dispose();
             frame = new JFrame(frameTitle);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(frameWidth, frameHeight);
-            frame.setLayout(new java.awt.FlowLayout());
+            frame.setLayout(null);
             if (frameIconPath != null) {
                 frame.setIconImage(new ImageIcon(frameIconPath.toString()).getImage());
+            }
+            for (Map.Entry<String, List<String>> action : keyActions.entrySet()) {
+                attachKeyAction(action.getKey(), action.getValue());
             }
         });
     }
@@ -541,12 +631,10 @@ public class Lumi {
     }
 
     private static void createButton(String name, String text) {
-        JButton component = GraphicsEnvironment.isHeadless() ? null : new JButton(text);
+        JButton component = new JButton(text);
         buttons.put(name, new LumiButton(text, component));
-        if (frame != null && component != null) {
-            frame.add(component);
-            frame.revalidate();
-        }
+        components.put(name, component);
+        addToFrame(component);
     }
 
     private static void addButtonAction(String name, List<String> body) {
@@ -555,34 +643,123 @@ public class Lumi {
             System.out.println("Unknown button: " + name);
             return;
         }
-        if (button.component() != null) {
-            button.component().addActionListener(event -> {
-                try {
-                    executeLines(body, new HashMap<>());
-                } catch (Exception error) {
-                    error.printStackTrace();
-                }
-            });
-        }
+        button.component().addActionListener(event -> runEventBody(body));
     }
 
     private static void createLabel(String name, String text) {
         JLabel label = new JLabel(text);
         labels.put(name, label);
-        if (frame != null) {
-            frame.add(label);
-            frame.revalidate();
-            frame.repaint();
-        }
+        components.put(name, label);
+        addToFrame(label);
     }
 
     private static void createTextBox(String name, String initialText) {
         JTextField box = new JTextField(initialText, 20);
         textBoxes.put(name, box);
-        if (frame != null) {
-            frame.add(box);
-            frame.revalidate();
+        components.put(name, box);
+        addToFrame(box);
+    }
+
+    private static void createPanel(String name, String componentNames) {
+        JPanel panel = new JPanel(new java.awt.FlowLayout());
+        panels.put(name, panel);
+        components.put(name, panel);
+        addToFrame(panel);
+        if (!componentNames.isBlank()) {
+            for (String componentName : componentNames.split(",")) {
+                addToPanel(name, componentName.trim());
+            }
         }
+    }
+
+    private static void addToPanel(String panelName, String componentName) {
+        JPanel panel = panels.get(panelName);
+        JComponent component = components.get(componentName);
+        if (component == null) {
+            System.out.println("Unknown component: " + componentName);
+            return;
+        }
+        panel.add(component);
+        panel.setSize(panel.getPreferredSize());
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    private static void addToFrame(JComponent component) {
+        if (frame != null) {
+            java.awt.Dimension size = component.getPreferredSize();
+            component.setBounds(10, nextComponentY, Math.max(size.width, 80), Math.max(size.height, 28));
+            nextComponentY += Math.max(size.height, 28) + 10;
+            frame.add(component);
+            frame.revalidate();
+            frame.repaint();
+        }
+    }
+
+    private static void setComponentPosition(String name, String axis, String operation) {
+        JComponent component = components.get(name);
+        if (component == null) {
+            System.out.println("Unknown component: " + name);
+            return;
+        }
+        int current = axis.equals("X") ? component.getX() : component.getY();
+        int amount = Integer.parseInt(
+                operation.startsWith("+") || operation.startsWith("-") || operation.startsWith("*")
+                        ? operation.substring(1)
+                        : operation);
+        int updated;
+        if (operation.startsWith("+")) updated = current + amount;
+        else if (operation.startsWith("-")) updated = current - amount;
+        else if (operation.startsWith("*")) updated = current * amount;
+        else updated = amount;
+        if (axis.equals("X")) component.setLocation(updated, component.getY());
+        else component.setLocation(component.getX(), updated);
+    }
+
+    private static void registerKeyAction(String key, List<String> body) {
+        String normalized = key.replace("\"", "").toUpperCase();
+        keyActions.put(normalized, List.copyOf(body));
+        if (frame != null) attachKeyAction(normalized, body);
+    }
+
+    private static void attachKeyAction(String key, List<String> body) {
+        KeyStroke stroke = KeyStroke.getKeyStroke("pressed " + key);
+        if (stroke == null || frame == null) {
+            System.out.println("Unknown key: " + key);
+            return;
+        }
+        frame.getRootPane().registerKeyboardAction(
+                event -> runEventBody(body),
+                stroke,
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
+    }
+
+    private static void runEventBody(List<String> body) {
+        try {
+            executeLines(body, new HashMap<>());
+        } catch (Exception error) {
+            error.printStackTrace();
+        }
+    }
+
+    private static void createFile(
+            String fileName, String content, Map<String, Object> locals) throws Exception {
+        Path requested = Path.of(fileName);
+        Path target = (requested.isAbsolute() ? requested : scriptDirectory.resolve(requested))
+                .normalize();
+        if (target.getParent() != null) Files.createDirectories(target.getParent());
+        Files.writeString(target, interpolate(content, locals));
+    }
+
+    private static String readInput(String prompt) throws Exception {
+        if (!GraphicsEnvironment.isHeadless() && frame != null && frame.isVisible()) {
+            String answer = JOptionPane.showInputDialog(frame, prompt);
+            return answer == null ? "" : answer;
+        }
+        System.out.print(prompt);
+        System.out.flush();
+        String answer = new BufferedReader(new InputStreamReader(System.in)).readLine();
+        return answer == null ? "" : answer;
     }
 
     private static final class ArithmeticParser {

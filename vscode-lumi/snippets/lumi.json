@@ -41,5 +41,35 @@
       "Label.create(\"${1:Hello}\").varname(${2:helloLabel})"
     ],
     "description": "Create a named Lumi label"
+  },
+  "Create file": {
+    "prefix": "file",
+    "body": [
+      "file.create(\"${1:Hello.txt}\",\"${2:Hello}\")"
+    ],
+    "description": "Create a file relative to the Lumi program"
+  },
+  "Listen for key": {
+    "prefix": "key",
+    "body": [
+      "key.listen(${1:L}) {",
+      "    ${2:print \"Key pressed\"}",
+      "}"
+    ],
+    "description": "Run code when a key is pressed"
+  },
+  "Create panel": {
+    "prefix": "panel",
+    "body": [
+      "Panel ${1:p} = (${2:helloLabel,helloButton})"
+    ],
+    "description": "Create a panel containing named components"
+  },
+  "Read input": {
+    "prefix": "input",
+    "body": [
+      "input(\"${1:Enter a value: }\" (${2:value}))"
+    ],
+    "description": "Prompt for input and store it in a variable"
   }
 }
