@@ -51,10 +51,9 @@ jobs:
             --input package-input \
             --main-jar lumi.jar \
             --name Lumi \
-            --app-version 0.1.1 \
+            --app-version 0.1.2 \
             --description "Lumi programming language" \
             --vendor "Lumi contributors" \
-            --license-file LICENSE \
             --icon icon.png
           tar -C dist -czf Lumi-unix-x64.tar.gz Lumi
 
@@ -68,10 +67,9 @@ jobs:
             --input package-input `
             --main-jar lumi.jar `
             --name Lumi `
-            --app-version 0.1.1 `
+            --app-version 0.1.2 `
             --description "Lumi programming language" `
             --vendor "Lumi contributors" `
-            --license-file LICENSE `
             --win-console
           Compress-Archive -Path dist/Lumi -DestinationPath Lumi-windows-x64.zip
 
@@ -85,10 +83,9 @@ jobs:
             --input package-input \
             --main-jar lumi.jar \
             --name Lumi \
-            --app-version 0.1.1 \
+            --app-version 0.1.2 \
             --description "Lumi programming language" \
             --vendor "Lumi contributors" \
-            --license-file LICENSE \
             --mac-package-name Lumi \
             --mac-app-category public.app-category.developer-tools
           ditto -c -k --sequesterRsrc --keepParent dist/Lumi.app Lumi-macos.zip
