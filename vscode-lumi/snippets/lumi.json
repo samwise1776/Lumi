@@ -11,11 +11,13 @@
     "body": [
       "if ${1:name} == ${2:\"value\"} then",
       "    ${3:print \"Matched\"}",
+      "else if ${4:name} == ${5:\"other\"} then",
+      "    ${6:print \"Matched something else\"}",
       "else",
-      "    ${4:print \"Not matched\"}",
+      "    ${7:print \"Not matched\"}",
       "end"
     ],
-    "description": "Lumi if/else statement"
+    "description": "Lumi if/else-if/else statement"
   },
   "Create frame": {
     "prefix": "frame",

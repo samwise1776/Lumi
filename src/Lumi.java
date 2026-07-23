@@ -42,7 +42,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 public class Lumi {
-    private static final String VERSION = "0.3.2";
+    private static final String VERSION = "0.3.3";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -232,9 +232,17 @@ public class Lumi {
             Matcher condition = Pattern.compile("if\\s+(.+?)\\s+then").matcher(line);
             if (condition.matches()) {
                 ConditionalBlock block = readConditional(lines, index);
-                List<String> selected = evaluateCondition(condition.group(1), locals)
-                        ? block.whenTrue()
-                        : block.whenFalse();
+                List<String> selected = block.whenFalse();
+                if (evaluateCondition(condition.group(1), locals)) {
+                    selected = block.whenTrue();
+                } else {
+                    for (ElseIfBranch branch : block.elseIfBranches()) {
+                        if (evaluateCondition(branch.condition(), locals)) {
+                            selected = branch.lines();
+                            break;
+                        }
+                    }
+                }
                 executeLines(selected, new HashMap<>(locals));
                 index = block.endIndex();
                 continue;
@@ -688,27 +696,42 @@ public class Lumi {
         };
     }
 
+    private record ElseIfBranch(String condition, List<String> lines) {}
+
     private record ConditionalBlock(
-            List<String> whenTrue, List<String> whenFalse, int endIndex) {}
+            List<String> whenTrue,
+            List<ElseIfBranch> elseIfBranches,
+            List<String> whenFalse,
+            int endIndex) {}
 
     private static ConditionalBlock readConditional(List<String> lines, int startIndex) {
         List<String> whenTrue = new ArrayList<>();
+        List<ElseIfBranch> elseIfBranches = new ArrayList<>();
         List<String> whenFalse = new ArrayList<>();
         List<String> current = whenTrue;
         int depth = 1;
 
         for (int index = startIndex + 1; index < lines.size(); index++) {
             String line = clean(lines.get(index));
+            Matcher elseIf = Pattern.compile("else\\s+if\\s+(.+?)\\s+then").matcher(line);
+            if (depth == 1 && elseIf.matches()) {
+                List<String> branchLines = new ArrayList<>();
+                elseIfBranches.add(new ElseIfBranch(elseIf.group(1), branchLines));
+                current = branchLines;
+                continue;
+            }
+            if (line.equals("else") && depth == 1) {
+                current = whenFalse;
+                continue;
+            }
             if (line.matches("if\\s+.+\\s+then")) {
                 depth++;
             } else if (line.equals("end")) {
                 depth--;
                 if (depth == 0) {
-                    return new ConditionalBlock(whenTrue, whenFalse, index);
+                    return new ConditionalBlock(
+                            whenTrue, List.copyOf(elseIfBranches), whenFalse, index);
                 }
-            } else if (line.equals("else") && depth == 1) {
-                current = whenFalse;
-                continue;
             }
             current.add(lines.get(index));
         }

@@ -14,6 +14,8 @@ answer = 10 + 5 * 2
 if name == "Ray" then
     print "Hello *name*"
     print answer
+else if name == "Lumi" then
+    print "Hello Lumi"
 else
     print "Unknown user"
 end
