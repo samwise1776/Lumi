@@ -34,6 +34,39 @@ end
 The ending number is included, so this prints 1 through 60. `variable++` also
 works outside a loop when the variable contains a number.
 
+Convert a numeric string into an integer with `(int)`. Lumi reports an error
+when the string is not a whole number:
+
+```lumi
+h = "123"
+inth = (int) h
+print inth
+```
+
+Text boxes can reject non-integer input:
+
+```lumi
+textB ageBox = ""
+ageBox.setIntsOnly(true)
+```
+
+Create a multiline text area with either `textA` or `textarea`. The `scan`
+method copies the current text from a text box or text area into a variable:
+
+```lumi
+textA notes = "Write here"
+notes.scan(savedNotes)
+print savedNotes
+
+textB nameBox = "Ray"
+nameBox.scan(name)
+print name
+```
+
+Lumi also reports readable errors for missing quotation marks, missing closing
+parentheses/brackets/braces, undefined variables, and using `++` on a value
+that is not a number.
+
 ## Lumi IDE and command help
 
 Open the built-in graphical editor:

@@ -29,6 +29,34 @@
     ],
     "description": "Loop through a numeric range using an incremented variable"
   },
+  "Convert to integer": {
+    "prefix": "int",
+    "body": [
+      "${1:number} = (int) ${2:text}"
+    ],
+    "description": "Convert a numeric value or string into an integer"
+  },
+  "Integer-only text box": {
+    "prefix": "intsonly",
+    "body": [
+      "${1:textBox}.setIntsOnly(${2|true,false|})"
+    ],
+    "description": "Allow only whole-number input in a text box"
+  },
+  "Create text area": {
+    "prefix": "textarea",
+    "body": [
+      "textA ${1:notes} = \"${2:Write here}\""
+    ],
+    "description": "Create a multiline Lumi text area"
+  },
+  "Scan text component": {
+    "prefix": "scan",
+    "body": [
+      "${1:textComponent}.scan(${2:value})"
+    ],
+    "description": "Copy text-box or text-area content into a variable"
+  },
   "Create frame": {
     "prefix": "frame",
     "body": [

@@ -40,14 +40,20 @@ import javax.swing.JToolBar;
 import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.JTextComponent;
 
 public class Lumi {
-    private static final String VERSION = "0.4.0";
+    private static final String VERSION = "0.5.0";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
     private static final Map<String, JLabel> labels = new HashMap<>();
     private static final Map<String, JTextField> textBoxes = new HashMap<>();
+    private static final Map<String, JTextArea> textAreas = new HashMap<>();
     private static final Map<String, JPanel> panels = new HashMap<>();
     private static final Map<String, JComponent> components = new HashMap<>();
     private static final Map<String, List<String>> keyActions = new HashMap<>();
@@ -113,7 +119,14 @@ public class Lumi {
         if (absoluteFile.getParent() != null) {
             scriptDirectory = absoluteFile.getParent();
         }
-        executeLines(Files.readAllLines(file), new HashMap<>());
+        List<String> source = Files.readAllLines(file);
+        try {
+            validateSyntax(source);
+            executeLines(source, new HashMap<>());
+        } catch (IllegalArgumentException error) {
+            System.err.println("Lumi error: " + error.getMessage());
+            System.exit(1);
+        }
     }
 
     private static boolean isIdeCommand(String argument) {
@@ -149,10 +162,10 @@ public class Lumi {
     private static void printKeywords() {
         System.out.println("Language: print let var if then else end import true false null");
         System.out.println("System:   System.sleep System.findval System.ctor");
-        System.out.println("Desktop:  frame Label LButton textB Panel key notify input");
+        System.out.println("Desktop:  frame Label LButton textB textA textarea Panel key notify input");
         System.out.println("Files:    file.create");
         System.out.println("Members:  create close delete varname visible icon action listen");
-        System.out.println("          add setX setY setFont read readFor");
+        System.out.println("          add setX setY setFont setIntsOnly read readFor scan");
     }
 
     private static void printFeatures() {
@@ -419,6 +432,29 @@ public class Lumi {
             return;
         }
 
+        Matcher textAreaCreate = Pattern
+                .compile("(?:textA|textarea)\\s+([A-Za-z_]\\w*)\\s*=\\s*\"(.*)\"\\s*;?")
+                .matcher(line);
+        if (textAreaCreate.matches()) {
+            createTextArea(
+                    textAreaCreate.group(1),
+                    interpolate(textAreaCreate.group(2), locals)
+                            .replace("\\n", "\n")
+                            .replace("\\t", "\t"));
+            return;
+        }
+
+        Matcher intsOnly = Pattern
+                .compile("([A-Za-z_]\\w*)\\.setIntsOnly\\((true|false)\\)\\s*;?",
+                        Pattern.CASE_INSENSITIVE)
+                .matcher(line);
+        if (intsOnly.matches()) {
+            setTextBoxIntsOnly(
+                    intsOnly.group(1),
+                    Boolean.parseBoolean(intsOnly.group(2)));
+            return;
+        }
+
         Matcher readFor = Pattern
                 .compile("([A-Za-z_]\\w*)\\.read\\.readFor\\(\"(.*)\"\\)\\s*;?")
                 .matcher(line);
@@ -440,6 +476,14 @@ public class Lumi {
             } else {
                 variables.put(readText.group(2), box.getText());
             }
+            return;
+        }
+
+        Matcher scanText = Pattern
+                .compile("([A-Za-z_]\\w*)\\.scan\\(([A-Za-z_]\\w*)\\)\\s*;?")
+                .matcher(line);
+        if (scanText.matches()) {
+            scanTextComponent(scanText.group(1), scanText.group(2));
             return;
         }
 
@@ -482,7 +526,7 @@ public class Lumi {
             return;
         }
 
-        System.out.println("Unknown instruction: " + line);
+        throw new IllegalArgumentException("Unknown instruction: " + line);
     }
 
     private static String concatenateBlock(List<String> lines, Map<String, Object> locals) {
@@ -525,6 +569,24 @@ public class Lumi {
     private static Object evaluate(String expression, Map<String, Object> locals) {
         String value = expression.trim().replaceFirst(";\\s*$", "");
 
+        Matcher intConversion = Pattern.compile("\\(int\\)\\s*(.+)").matcher(value);
+        if (intConversion.matches()) {
+            Object converted = evaluate(intConversion.group(1), locals);
+            if (converted instanceof Number number) return number.longValue();
+            String text = display(converted).trim();
+            if (!text.matches("[+-]?\\d+")) {
+                throw new IllegalArgumentException(
+                        "Cannot convert \"" + text
+                                + "\" to int because it is not a whole number.");
+            }
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException(
+                        "Cannot convert \"" + text + "\" to int because it is too large.");
+            }
+        }
+
         Matcher find = Pattern
                 .compile("System\\.findval\\(([A-Za-z_]\\w*)\\)")
                 .matcher(value);
@@ -558,7 +620,69 @@ public class Lumi {
         if (variables.containsKey(name)) {
             return variables.get(name);
         }
-        return "<undefined:" + name + ">";
+        throw new IllegalArgumentException(
+                "Undefined variable \"" + name
+                        + "\". If you meant to print text, put quotation marks around it.");
+    }
+
+    private record OpenDelimiter(char character, int line) {}
+
+    private static void validateSyntax(List<String> lines) {
+        List<OpenDelimiter> open = new ArrayList<>();
+        for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+            String line = lines.get(lineIndex);
+            boolean inString = false;
+            for (int index = 0; index < line.length(); index++) {
+                char current = line.charAt(index);
+                if (current == '"' && (index == 0 || line.charAt(index - 1) != '\\')) {
+                    inString = !inString;
+                    continue;
+                }
+                if (!inString && current == '#') break;
+                if (inString) continue;
+                if (current == '(' || current == '[' || current == '{') {
+                    open.add(new OpenDelimiter(current, lineIndex + 1));
+                } else if (current == ')' || current == ']' || current == '}') {
+                    if (open.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                "Line " + (lineIndex + 1)
+                                        + ": unexpected closing " + current);
+                    }
+                    OpenDelimiter last = open.remove(open.size() - 1);
+                    if (!delimitersMatch(last.character(), current)) {
+                        throw new IllegalArgumentException(
+                                "Line " + (lineIndex + 1) + ": expected "
+                                        + closingDelimiter(last.character())
+                                        + " before " + current);
+                    }
+                }
+            }
+            if (inString) {
+                throw new IllegalArgumentException(
+                        "Line " + (lineIndex + 1)
+                                + ": missing closing quotation mark (\").");
+            }
+        }
+        if (!open.isEmpty()) {
+            OpenDelimiter last = open.get(open.size() - 1);
+            throw new IllegalArgumentException(
+                    "Line " + last.line() + ": missing closing "
+                            + closingDelimiter(last.character()));
+        }
+    }
+
+    private static boolean delimitersMatch(char opening, char closing) {
+        return (opening == '(' && closing == ')')
+                || (opening == '[' && closing == ']')
+                || (opening == '{' && closing == '}');
+    }
+
+    private static char closingDelimiter(char opening) {
+        return switch (opening) {
+            case '(' -> ')';
+            case '[' -> ']';
+            default -> '}';
+        };
     }
 
     private static void defineClass(
@@ -897,6 +1021,66 @@ public class Lumi {
         addToFrame(box);
     }
 
+    private static void createTextArea(String name, String initialText) {
+        JTextArea area = new JTextArea(initialText, 5, 24);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        textAreas.put(name, area);
+        components.put(name, area);
+        addToFrame(area);
+    }
+
+    private static void scanTextComponent(String componentName, String variableName) {
+        JTextComponent textComponent = findTextComponent(componentName);
+        variables.put(variableName, textComponent.getText());
+    }
+
+    private static void setTextBoxIntsOnly(String name, boolean enabled) {
+        JTextComponent box = findTextComponent(name);
+        AbstractDocument document = (AbstractDocument) box.getDocument();
+        if (!enabled) {
+            document.setDocumentFilter(null);
+            return;
+        }
+        if (!box.getText().matches("-?\\d*")) box.setText("");
+        document.setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(
+                    FilterBypass bypass,
+                    int offset,
+                    int length,
+                    String text,
+                    AttributeSet attributes) throws BadLocationException {
+                String current = bypass.getDocument().getText(
+                        0, bypass.getDocument().getLength());
+                String replacement = text == null ? "" : text;
+                String updated = current.substring(0, offset)
+                        + replacement
+                        + current.substring(offset + length);
+                if (updated.matches("-?\\d*")) {
+                    super.replace(bypass, offset, length, replacement, attributes);
+                }
+            }
+
+            @Override
+            public void insertString(
+                    FilterBypass bypass,
+                    int offset,
+                    String text,
+                    AttributeSet attributes) throws BadLocationException {
+                replace(bypass, offset, 0, text, attributes);
+            }
+        });
+    }
+
+    private static JTextComponent findTextComponent(String name) {
+        JTextField box = textBoxes.get(name);
+        if (box != null) return box;
+        JTextArea area = textAreas.get(name);
+        if (area != null) return area;
+        throw new IllegalArgumentException("Unknown text box or text area: " + name);
+    }
+
     private static void createPanel(String name, String componentNames) {
         JPanel panel = new JPanel(new java.awt.FlowLayout());
         panels.put(name, panel);
@@ -1011,6 +1195,7 @@ public class Lumi {
         buttons.remove(name);
         labels.remove(name);
         textBoxes.remove(name);
+        textAreas.remove(name);
         panels.remove(name);
     }
 
