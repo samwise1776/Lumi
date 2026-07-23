@@ -33,6 +33,18 @@ Run a particular program with:
 flatpak run io.lumicode.Lumi program.lumi
 ```
 
+## Windows, macOS, and Unix
+
+The latest GitHub release contains self-contained downloads for each platform:
+
+- `Lumi-windows-x64.zip` — extract it and run `Lumi.exe`
+- `Lumi-macos.zip` — extract it and open `Lumi.app`
+- `Lumi-unix-x64.tar.gz` — extract it and run `Lumi/bin/Lumi`
+
+These packages include a private Java runtime, so users do not need to install
+Java separately. The macOS build is currently unsigned, so macOS may ask the
+user to confirm opening an application downloaded from the internet.
+
 ## Build from source
 
 Requirements:
