@@ -2,7 +2,7 @@
   "name": "lumi-language",
   "displayName": "Lumi Language",
   "description": "Language support and a run command for Lumi source files.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "lumicode",
   "license": "MIT",
   "engines": {

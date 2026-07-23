@@ -47,7 +47,7 @@ import javax.swing.text.DocumentFilter;
 import javax.swing.text.JTextComponent;
 
 public class Lumi {
-    private static final String VERSION = "0.5.0";
+    private static final String VERSION = "0.5.1";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -291,10 +291,12 @@ public class Lumi {
         }
 
         Matcher fileCreate = Pattern
-                .compile("file\\.create\\(\"([^\"]+)\",\\s*\"(.*)\"\\)\\s*;?")
+                .compile("file\\.create\\(\"([^\"]+)\",\\s*(.+)\\)\\s*;?")
                 .matcher(line);
         if (fileCreate.matches()) {
-            createFile(fileCreate.group(1), fileCreate.group(2), locals);
+            createFile(
+                    fileCreate.group(1),
+                    display(evaluate(fileCreate.group(2), locals)));
             return;
         }
 
@@ -1225,13 +1227,12 @@ public class Lumi {
         }
     }
 
-    private static void createFile(
-            String fileName, String content, Map<String, Object> locals) throws Exception {
+    private static void createFile(String fileName, String content) throws Exception {
         Path requested = Path.of(fileName);
         Path target = (requested.isAbsolute() ? requested : scriptDirectory.resolve(requested))
                 .normalize();
         if (target.getParent() != null) Files.createDirectories(target.getParent());
-        Files.writeString(target, interpolate(content, locals));
+        Files.writeString(target, content);
     }
 
     private static String readInput(String prompt) throws Exception {

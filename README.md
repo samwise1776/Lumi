@@ -67,6 +67,15 @@ Lumi also reports readable errors for missing quotation marks, missing closing
 parentheses/brackets/braces, undefined variables, and using `++` on a value
 that is not a number.
 
+File content can be text, an integer, a numeric expression, or a variable:
+
+```lumi
+score = 123
+file.create("score.txt", score)
+file.create("answer.txt", 10 + 5)
+file.create("message.txt", "Hello")
+```
+
 ## Lumi IDE and command help
 
 Open the built-in graphical editor:

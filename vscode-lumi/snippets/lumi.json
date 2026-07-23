@@ -92,9 +92,9 @@
   "Create file": {
     "prefix": "file",
     "body": [
-      "file.create(\"${1:Hello.txt}\",\"${2:Hello}\")"
+      "file.create(\"${1:Hello.txt}\", ${2:\"Hello\"})"
     ],
-    "description": "Create a file relative to the Lumi program"
+    "description": "Create a file from text, a number, or a variable"
   },
   "Listen for key": {
     "prefix": "key",
