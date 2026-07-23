@@ -42,7 +42,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 public class Lumi {
-    private static final String VERSION = "0.3.3";
+    private static final String VERSION = "0.4.0";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -225,6 +225,21 @@ public class Lumi {
             if (keyListener.matches()) {
                 Block block = readBlock(lines, index);
                 registerKeyAction(keyListener.group(1).trim(), block.lines());
+                index = block.endIndex();
+                continue;
+            }
+
+            Matcher forLoop = Pattern
+                    .compile("for\\s+([A-Za-z_]\\w*)\\s*=\\s*(-?\\d+)\\s*-t-\\s*(-?\\d+)")
+                    .matcher(line);
+            if (forLoop.matches()) {
+                Block block = readEndBlock(lines, index);
+                runForLoop(
+                        forLoop.group(1),
+                        Long.parseLong(forLoop.group(2)),
+                        Long.parseLong(forLoop.group(3)),
+                        block.lines(),
+                        locals);
                 index = block.endIndex();
                 continue;
             }
@@ -434,6 +449,14 @@ public class Lumi {
             return;
         }
 
+        Matcher increment = Pattern
+                .compile("([A-Za-z_]\\w*)\\+\\+\\s*;?")
+                .matcher(line);
+        if (increment.matches()) {
+            incrementVariable(increment.group(1), locals);
+            return;
+        }
+
         Matcher assignment = Pattern
                 .compile("(?:(?:let|var)\\s+)?([A-Za-z_]\\w*)\\s*=\\s*(.+?)\\s*;?")
                 .matcher(line);
@@ -598,6 +621,54 @@ public class Lumi {
     }
 
     private record Block(List<String> lines, int endIndex) {}
+
+    private static Block readEndBlock(List<String> lines, int startIndex) {
+        List<String> body = new ArrayList<>();
+        int depth = 1;
+        for (int index = startIndex + 1; index < lines.size(); index++) {
+            String line = clean(lines.get(index));
+            if (line.matches("(?:if\\s+.+\\s+then|for\\s+.+)")) {
+                depth++;
+            } else if (line.equals("end")) {
+                depth--;
+                if (depth == 0) return new Block(body, index);
+            }
+            body.add(lines.get(index));
+        }
+        throw new IllegalArgumentException(
+                "Missing end for for loop on line " + (startIndex + 1));
+    }
+
+    private static void runForLoop(
+            String variable,
+            long start,
+            long end,
+            List<String> body,
+            Map<String, Object> locals) throws Exception {
+        variables.put(variable, start);
+        while (numberVariable(variable, locals) <= end) {
+            long before = numberVariable(variable, locals);
+            executeLines(body, locals);
+            long after = numberVariable(variable, locals);
+            if (after <= before) {
+                throw new IllegalArgumentException(
+                        "The for loop variable " + variable
+                                + " must increase. Add " + variable + "++ inside the loop.");
+            }
+        }
+    }
+
+    private static void incrementVariable(String name, Map<String, Object> locals) {
+        long incremented = numberVariable(name, locals) + 1;
+        if (locals.containsKey(name)) locals.put(name, incremented);
+        else variables.put(name, incremented);
+    }
+
+    private static long numberVariable(String name, Map<String, Object> locals) {
+        Object value = findVariable(name, locals);
+        if (value instanceof Number number) return number.longValue();
+        throw new IllegalArgumentException(name + " must contain a number");
+    }
 
     private static Block readBlock(List<String> lines, int startIndex) {
         List<String> body = new ArrayList<>();

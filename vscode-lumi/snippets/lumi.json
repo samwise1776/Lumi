@@ -19,6 +19,16 @@
     ],
     "description": "Lumi if/else-if/else statement"
   },
+  "For loop": {
+    "prefix": "for",
+    "body": [
+      "for ${1:i} = ${2:1}-t-${3:60}",
+      "    ${4:print ${1:i}}",
+      "    ${1:i}++",
+      "end"
+    ],
+    "description": "Loop through a numeric range using an incremented variable"
+  },
   "Create frame": {
     "prefix": "frame",
     "body": [

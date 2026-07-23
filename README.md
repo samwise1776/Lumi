@@ -21,6 +21,19 @@ else
 end
 ```
 
+Loops use `-t-` between the starting and ending numbers. Increment the loop
+variable with `++`:
+
+```lumi
+for i = 1-t-60
+    print i
+    i++
+end
+```
+
+The ending number is included, so this prints 1 through 60. `variable++` also
+works outside a loop when the variable contains a number.
+
 ## Lumi IDE and command help
 
 Open the built-in graphical editor:
