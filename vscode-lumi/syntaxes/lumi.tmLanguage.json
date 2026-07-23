@@ -55,7 +55,7 @@
         },
         {
           "name": "support.function.lumi",
-          "match": "\\b(?:sleep|findval|ctor|create|close|delete|varname|visible|icon|action|listen|add|setX|setY|read|readFor|input|notify)\\b"
+          "match": "\\b(?:sleep|findval|ctor|create|close|delete|varname|visible|icon|action|listen|add|setX|setY|setFont|read|readFor|input|notify)\\b"
         },
         {
           "name": "entity.name.function.lumi",
@@ -71,7 +71,7 @@
       "patterns": [
         {
           "name": "constant.language.lumi",
-          "match": "\\b(?:true|false|null)\\b"
+          "match": "\\b(?:true|false|null|BOLD|PLAIN|ITALIC|UNDERLINED|INDENTED|LARGE)\\b"
         }
       ]
     },

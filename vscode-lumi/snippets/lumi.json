@@ -42,6 +42,13 @@
     ],
     "description": "Create a named Lumi label from text or a variable"
   },
+  "Set component font": {
+    "prefix": "setfont",
+    "body": [
+      "${1:componentName}.setFont(\"${2:Arial}\", ${3|BOLD,PLAIN,ITALIC,UNDERLINED,INDENTED,LARGE|}, ${4:18})"
+    ],
+    "description": "Set a Lumi component's font family, style, and size"
+  },
   "Create file": {
     "prefix": "file",
     "body": [

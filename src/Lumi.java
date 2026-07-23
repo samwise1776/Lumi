@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import java.awt.GraphicsEnvironment;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
+import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import javax.swing.JButton;
 import javax.swing.BorderFactory;
@@ -41,7 +42,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 public class Lumi {
-    private static final String VERSION = "0.3.1";
+    private static final String VERSION = "0.3.2";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -151,7 +152,7 @@ public class Lumi {
         System.out.println("Desktop:  frame Label LButton textB Panel key notify input");
         System.out.println("Files:    file.create");
         System.out.println("Members:  create close delete varname visible icon action listen");
-        System.out.println("          add setX setY read readFor");
+        System.out.println("          add setX setY setFont read readFor");
     }
 
     private static void printFeatures() {
@@ -362,6 +363,20 @@ public class Lumi {
                     setPosition.group(1),
                     setPosition.group(2),
                     setPosition.group(3));
+            return;
+        }
+
+        Matcher setFont = Pattern
+                .compile("([A-Za-z_]\\w*)\\.setFont\\(\"([^\"]+)\"\\s*,\\s*"
+                        + "(BOLD|PLAIN|ITALIC|UNDERLINED|INDENTED|LARGE)\\s*,\\s*"
+                        + "(\\d+)\\)\\s*;?", Pattern.CASE_INSENSITIVE)
+                .matcher(line);
+        if (setFont.matches()) {
+            setComponentFont(
+                    setFont.group(1),
+                    setFont.group(2),
+                    setFont.group(3),
+                    Integer.parseInt(setFont.group(4)));
             return;
         }
 
@@ -759,10 +774,26 @@ public class Lumi {
     }
 
     private static void createLabel(String name, String text) {
-        JLabel label = new JLabel(text);
+        JLabel label = new JLabel(formatLabelText(text));
         labels.put(name, label);
         components.put(name, label);
         addToFrame(label);
+    }
+
+    private static String formatLabelText(String text) {
+        if (!text.contains("\n") && !text.contains("\r")) return text;
+        return "<html>" + escapeHtml(text)
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .replace("\n", "<br>") + "</html>";
+    }
+
+    private static String escapeHtml(String text) {
+        return text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     private static void createTextBox(String name, String initialText) {
@@ -826,6 +857,47 @@ public class Lumi {
         else updated = amount;
         if (axis.equals("X")) component.setLocation(updated, component.getY());
         else component.setLocation(component.getX(), updated);
+    }
+
+    private static void setComponentFont(
+            String name, String family, String requestedStyle, int requestedSize) {
+        JComponent component = components.get(name);
+        if (component == null) {
+            System.out.println("Unknown component: " + name);
+            return;
+        }
+        if (requestedSize < 1) {
+            System.out.println("Font size must be at least 1");
+            return;
+        }
+
+        String styleName = requestedStyle.toUpperCase();
+        int javaStyle = switch (styleName) {
+            case "BOLD", "LARGE" -> Font.BOLD;
+            case "ITALIC" -> Font.ITALIC;
+            default -> Font.PLAIN;
+        };
+        float size = styleName.equals("LARGE") ? requestedSize * 1.5f : requestedSize;
+        Font font = new Font(family, javaStyle, Math.round(size));
+        if (styleName.equals("UNDERLINED")) {
+            Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
+            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+            font = font.deriveFont(attributes);
+        }
+        component.setFont(font);
+
+        if (styleName.equals("INDENTED")) {
+            component.setBorder(BorderFactory.createCompoundBorder(
+                    component.getBorder(),
+                    BorderFactory.createEmptyBorder(0, requestedSize, 0, 0)));
+        }
+
+        Dimension preferred = component.getPreferredSize();
+        component.setSize(
+                Math.max(component.getWidth(), preferred.width),
+                Math.max(component.getHeight(), preferred.height));
+        component.revalidate();
+        component.repaint();
     }
 
     private static void deleteComponent(String name) {
