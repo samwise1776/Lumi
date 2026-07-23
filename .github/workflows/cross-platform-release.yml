@@ -51,7 +51,7 @@ jobs:
             --input package-input \
             --main-jar lumi.jar \
             --name Lumi \
-            --app-version 0.5.1 \
+            --app-version 0.5.2 \
             --description "Lumi programming language" \
             --vendor "Lumi contributors" \
             --icon icon.png
@@ -67,7 +67,7 @@ jobs:
             --input package-input `
             --main-jar lumi.jar `
             --name Lumi `
-            --app-version 0.5.1 `
+            --app-version 0.5.2 `
             --description "Lumi programming language" `
             --vendor "Lumi contributors" `
             --win-console
@@ -83,7 +83,7 @@ jobs:
             --input package-input \
             --main-jar lumi.jar \
             --name Lumi \
-            --app-version 5.1.0 \
+            --app-version 5.2.0 \
             --description "Lumi programming language" \
             --vendor "Lumi contributors" \
             --mac-package-name Lumi \

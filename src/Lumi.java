@@ -47,7 +47,7 @@ import javax.swing.text.DocumentFilter;
 import javax.swing.text.JTextComponent;
 
 public class Lumi {
-    private static final String VERSION = "0.5.1";
+    private static final String VERSION = "0.5.2";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -134,7 +134,11 @@ public class Lumi {
     }
 
     private static boolean isHelpCommand(String argument) {
-        return argument.equals("help") || argument.equals("-h") || argument.equals("--help");
+        return argument.equals("help")
+                || argument.equals("h")
+                || argument.equals("-h")
+                || argument.equals("-help")
+                || argument.equals("--help");
     }
 
     private static void launchIde() {
@@ -146,7 +150,12 @@ public class Lumi {
     }
 
     private static void printHelp() {
+        System.out.println("=====LUMI HELP=====");
         System.out.println("Lumi " + VERSION + " - programming language");
+        System.out.println();
+        System.out.println("Keywords:");
+        System.out.println("  print - use a space then quotation marks to print your text");
+        System.out.println("          or use a variable, such as: print name");
         System.out.println();
         System.out.println("Usage:");
         System.out.println("  lumi <file.lumi>       Run a Lumi program");
@@ -156,6 +165,10 @@ public class Lumi {
         System.out.println("  lumi --keywords        List Lumi keywords and built-ins");
         System.out.println("  lumi --features        List language features");
         System.out.println("  lumi --version         Print the Lumi version");
+        System.out.println("  lumi help              Show this help");
+        System.out.println("  lumi h                 Short help alias");
+        System.out.println("  lumi -h                Short help alias");
+        System.out.println("  lumi -help             Show this help");
         System.out.println("  lumi --help            Show this help");
     }
 

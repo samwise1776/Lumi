@@ -97,6 +97,8 @@ lumi --features
 lumi --version
 ```
 
+Help also accepts `lumi help`, `lumi h`, `lumi -h`, and `lumi -help`.
+
 ## Install the Flatpak
 
 Download `Lumi.flatpak` from the latest GitHub release, then run:
