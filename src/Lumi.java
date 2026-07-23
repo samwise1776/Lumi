@@ -1,5 +1,8 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -14,18 +17,31 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 import javax.swing.JButton;
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.JToolBar;
+import javax.swing.WindowConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class Lumi {
+    private static final String VERSION = "0.3.0";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -53,7 +69,22 @@ public class Lumi {
     public static void main(String[] args) throws Exception {
         Path file;
 
-        if (args.length == 0 && System.getenv("FLATPAK_ID") != null) {
+        if (args.length == 1 && isIdeCommand(args[0])) {
+            launchIde();
+            return;
+        } else if (args.length == 1 && isHelpCommand(args[0])) {
+            printHelp();
+            return;
+        } else if (args.length == 1 && args[0].equals("--keywords")) {
+            printKeywords();
+            return;
+        } else if (args.length == 1 && args[0].equals("--version")) {
+            System.out.println("Lumi " + VERSION);
+            return;
+        } else if (args.length == 1 && args[0].equals("--features")) {
+            printFeatures();
+            return;
+        } else if (args.length == 0 && System.getenv("FLATPAK_ID") != null) {
             file = chooseLumiFile();
             if (file == null) return;
         } else if (args.length == 1) {
@@ -61,9 +92,7 @@ public class Lumi {
         } else if (args.length == 2 && args[0].equals("run")) {
             file = Path.of(args[1]);
         } else {
-            System.out.println("Run a Lumi program:");
-            System.out.println("  lumi <file.lumi>");
-            System.out.println("  lumi run <file.lumi>");
+            printHelp();
             return;
         }
 
@@ -84,6 +113,54 @@ public class Lumi {
             scriptDirectory = absoluteFile.getParent();
         }
         executeLines(Files.readAllLines(file), new HashMap<>());
+    }
+
+    private static boolean isIdeCommand(String argument) {
+        return argument.equals("ide") || argument.equals("-ide") || argument.equals("--ide");
+    }
+
+    private static boolean isHelpCommand(String argument) {
+        return argument.equals("help") || argument.equals("-h") || argument.equals("--help");
+    }
+
+    private static void launchIde() {
+        if (GraphicsEnvironment.isHeadless()) {
+            System.out.println("The Lumi IDE needs a graphical desktop.");
+            return;
+        }
+        SwingUtilities.invokeLater(() -> new LumiIde().show());
+    }
+
+    private static void printHelp() {
+        System.out.println("Lumi " + VERSION + " - programming language");
+        System.out.println();
+        System.out.println("Usage:");
+        System.out.println("  lumi <file.lumi>       Run a Lumi program");
+        System.out.println("  lumi run <file.lumi>   Run a Lumi program");
+        System.out.println("  lumi ide               Open the Lumi IDE");
+        System.out.println("  lumi --ide             Open the Lumi IDE");
+        System.out.println("  lumi --keywords        List Lumi keywords and built-ins");
+        System.out.println("  lumi --features        List language features");
+        System.out.println("  lumi --version         Print the Lumi version");
+        System.out.println("  lumi --help            Show this help");
+    }
+
+    private static void printKeywords() {
+        System.out.println("Language: print let var if then else end import true false null");
+        System.out.println("System:   System.sleep System.findval System.ctor");
+        System.out.println("Desktop:  frame Label LButton textB Panel key notify input");
+        System.out.println("Files:    file.create");
+        System.out.println("Members:  create close delete varname visible icon action listen");
+        System.out.println("          add setX setY read readFor");
+    }
+
+    private static void printFeatures() {
+        System.out.println("Lumi features:");
+        System.out.println("  Variables, strings, interpolation, arithmetic, and conditions");
+        System.out.println("  Constructors, imports, methods, parameters, and sleeping");
+        System.out.println("  Files, user input, and desktop notifications");
+        System.out.println("  Frames, labels, buttons, text boxes, panels, and keyboard actions");
+        System.out.println("  Built-in graphical IDE with open, save, run, and output");
     }
 
     private static Path chooseLumiFile() throws Exception {
@@ -852,6 +929,300 @@ public class Lumi {
                     message,
                     title,
                     JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private static final class LumiIde {
+        private final JFrame window = new JFrame("Lumi IDE");
+        private final JTextArea editor = new JTextArea();
+        private final JTextArea output = new JTextArea();
+        private final JLabel status = new JLabel("Ready");
+        private Path currentFile;
+        private boolean dirty;
+
+        LumiIde() {
+            configureWindow();
+            configureEditor();
+            configureOutput();
+            window.setJMenuBar(createMenuBar());
+            window.add(createToolbar(), BorderLayout.NORTH);
+
+            JSplitPane split = new JSplitPane(
+                    JSplitPane.VERTICAL_SPLIT,
+                    new JScrollPane(editor),
+                    new JScrollPane(output));
+            split.setResizeWeight(0.75);
+            split.setDividerLocation(520);
+            window.add(split, BorderLayout.CENTER);
+
+            status.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+            window.add(status, BorderLayout.SOUTH);
+            updateTitle();
+        }
+
+        void show() {
+            window.setVisible(true);
+            editor.requestFocusInWindow();
+        }
+
+        private void configureWindow() {
+            window.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            window.setSize(950, 720);
+            window.setMinimumSize(new Dimension(650, 450));
+            window.setLocationRelativeTo(null);
+            if (frameIconPath != null) {
+                window.setIconImage(new ImageIcon(frameIconPath.toString()).getImage());
+            }
+            window.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosing(java.awt.event.WindowEvent event) {
+                    if (confirmDiscardChanges()) window.dispose();
+                }
+            });
+        }
+
+        private void configureEditor() {
+            editor.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 15));
+            editor.setTabSize(4);
+            editor.setText("""
+                    # Welcome to the Lumi IDE
+                    name = "Ray"
+                    print "Hello *name*"
+                    """);
+            editor.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent event) {
+                    markDirty();
+                }
+
+                @Override
+                public void removeUpdate(DocumentEvent event) {
+                    markDirty();
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent event) {
+                    markDirty();
+                }
+            });
+            dirty = false;
+        }
+
+        private void configureOutput() {
+            output.setEditable(false);
+            output.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+            output.setText("Lumi IDE " + VERSION + "\n");
+        }
+
+        private JMenuBar createMenuBar() {
+            JMenuBar bar = new JMenuBar();
+            JMenu file = new JMenu("File");
+            file.add(menuItem("New", "control N", event -> newFile()));
+            file.add(menuItem("Open…", "control O", event -> openFile()));
+            file.add(menuItem("Save", "control S", event -> save()));
+            file.add(menuItem("Save As…", "control shift S", event -> saveAs()));
+            file.addSeparator();
+            file.add(menuItem("Exit", "alt F4", event -> {
+                if (confirmDiscardChanges()) window.dispose();
+            }));
+
+            JMenu run = new JMenu("Run");
+            run.add(menuItem("Run Program", "control F5", event -> runProgram()));
+            run.add(menuItem("Clear Output", null, event -> output.setText("")));
+
+            JMenu help = new JMenu("Help");
+            help.add(menuItem("Keywords", null, event -> showKeywords()));
+            help.add(menuItem("About Lumi", null, event -> JOptionPane.showMessageDialog(
+                    window,
+                    "Lumi IDE " + VERSION + "\nA small programming language written in Java.",
+                    "About Lumi",
+                    JOptionPane.INFORMATION_MESSAGE)));
+
+            bar.add(file);
+            bar.add(run);
+            bar.add(help);
+            return bar;
+        }
+
+        private JMenuItem menuItem(
+                String text,
+                String accelerator,
+                java.awt.event.ActionListener listener) {
+            JMenuItem item = new JMenuItem(text);
+            if (accelerator != null) item.setAccelerator(KeyStroke.getKeyStroke(accelerator));
+            item.addActionListener(listener);
+            return item;
+        }
+
+        private JToolBar createToolbar() {
+            JToolBar toolbar = new JToolBar();
+            toolbar.setFloatable(false);
+            toolbar.add(toolbarButton("New", event -> newFile()));
+            toolbar.add(toolbarButton("Open", event -> openFile()));
+            toolbar.add(toolbarButton("Save", event -> save()));
+            toolbar.addSeparator();
+            toolbar.add(toolbarButton("▶ Run", event -> runProgram()));
+            return toolbar;
+        }
+
+        private JButton toolbarButton(
+                String text, java.awt.event.ActionListener listener) {
+            JButton button = new JButton(text);
+            button.addActionListener(listener);
+            return button;
+        }
+
+        private void markDirty() {
+            dirty = true;
+            updateTitle();
+        }
+
+        private void updateTitle() {
+            String name = currentFile == null ? "Untitled.lumi" : currentFile.getFileName().toString();
+            window.setTitle((dirty ? "* " : "") + name + " — Lumi IDE");
+        }
+
+        private boolean confirmDiscardChanges() {
+            if (!dirty) return true;
+            int choice = JOptionPane.showConfirmDialog(
+                    window,
+                    "Save changes before continuing?",
+                    "Unsaved Lumi program",
+                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (choice == JOptionPane.CANCEL_OPTION || choice == JOptionPane.CLOSED_OPTION) {
+                return false;
+            }
+            return choice != JOptionPane.YES_OPTION || save();
+        }
+
+        private void newFile() {
+            if (!confirmDiscardChanges()) return;
+            currentFile = null;
+            editor.setText("# New Lumi program\n");
+            dirty = false;
+            output.setText("");
+            status.setText("New program");
+            updateTitle();
+        }
+
+        private void openFile() {
+            if (!confirmDiscardChanges()) return;
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Open Lumi program");
+            chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                    "Lumi programs (*.lumi)", "lumi"));
+            if (chooser.showOpenDialog(window) != JFileChooser.APPROVE_OPTION) return;
+
+            try {
+                currentFile = chooser.getSelectedFile().toPath().toAbsolutePath().normalize();
+                editor.setText(Files.readString(currentFile));
+                editor.setCaretPosition(0);
+                dirty = false;
+                status.setText("Opened " + currentFile);
+                updateTitle();
+            } catch (java.io.IOException error) {
+                showError("Could not open file", error);
+            }
+        }
+
+        private boolean save() {
+            if (currentFile == null) return saveAs();
+            try {
+                Files.writeString(currentFile, editor.getText());
+                dirty = false;
+                status.setText("Saved " + currentFile);
+                updateTitle();
+                return true;
+            } catch (java.io.IOException error) {
+                showError("Could not save file", error);
+                return false;
+            }
+        }
+
+        private boolean saveAs() {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Save Lumi program");
+            chooser.setSelectedFile(new java.io.File(
+                    currentFile == null ? "program.lumi" : currentFile.getFileName().toString()));
+            chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                    "Lumi programs (*.lumi)", "lumi"));
+            if (chooser.showSaveDialog(window) != JFileChooser.APPROVE_OPTION) return false;
+
+            Path selected = chooser.getSelectedFile().toPath();
+            if (!selected.toString().toLowerCase().endsWith(".lumi")) {
+                selected = Path.of(selected + ".lumi");
+            }
+            currentFile = selected.toAbsolutePath().normalize();
+            return save();
+        }
+
+        private void runProgram() {
+            if (!save()) return;
+            output.setText("");
+            status.setText("Running " + currentFile.getFileName() + "…");
+
+            new SwingWorker<Integer, String>() {
+                @Override
+                protected Integer doInBackground() throws Exception {
+                    String executable = System.getProperty("os.name").toLowerCase().contains("win")
+                            ? "java.exe"
+                            : "java";
+                    Path java = Path.of(System.getProperty("java.home"), "bin", executable);
+                    ProcessBuilder builder = new ProcessBuilder(
+                            java.toString(),
+                            "-cp",
+                            System.getProperty("java.class.path"),
+                            Lumi.class.getName(),
+                            currentFile.toString());
+                    builder.directory(currentFile.getParent().toFile());
+                    builder.redirectErrorStream(true);
+                    Process process = builder.start();
+                    try (BufferedReader reader = process.inputReader()) {
+                        String line;
+                        while ((line = reader.readLine()) != null) publish(line + "\n");
+                    }
+                    return process.waitFor();
+                }
+
+                @Override
+                protected void process(List<String> chunks) {
+                    for (String chunk : chunks) output.append(chunk);
+                    output.setCaretPosition(output.getDocument().getLength());
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        int code = get();
+                        status.setText(code == 0 ? "Finished successfully" : "Exited with code " + code);
+                    } catch (Exception error) {
+                        status.setText("Run failed");
+                        showError("Could not run program", error);
+                    }
+                }
+            }.execute();
+        }
+
+        private void showKeywords() {
+            JOptionPane.showMessageDialog(
+                    window,
+                    """
+                    print  let  var  if  then  else  end  import
+                    System.sleep  System.findval  System.ctor
+                    frame  Label  LButton  textB  Panel
+                    file.create  key.listen  input  notify
+                    """,
+                    "Lumi keywords",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        private void showError(String title, Exception error) {
+            JOptionPane.showMessageDialog(
+                    window,
+                    error.getMessage(),
+                    title,
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 

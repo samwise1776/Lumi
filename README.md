@@ -19,6 +19,27 @@ else
 end
 ```
 
+## Lumi IDE and command help
+
+Open the built-in graphical editor:
+
+```bash
+lumi ide
+```
+
+The aliases `lumi -ide` and `lumi --ide` work too. The IDE provides new,
+open, save, save-as, run, captured program output, keyboard shortcuts, and
+unsaved-change protection.
+
+Explore the command line with:
+
+```bash
+lumi --help
+lumi --keywords
+lumi --features
+lumi --version
+```
+
 ## Install the Flatpak
 
 Download `Lumi.flatpak` from the latest GitHub release, then run:

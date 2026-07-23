@@ -28,7 +28,14 @@ function activate(context) {
     terminal.sendText(`lumi run ${shellQuote(editor.document.fileName)}`, true);
   });
 
-  context.subscriptions.push(runFile);
+  const openIde = vscode.commands.registerCommand("lumi.openIde", () => {
+    const terminal =
+      vscode.window.terminals.find((item) => item.name === "Lumi") ||
+      vscode.window.createTerminal("Lumi");
+    terminal.sendText("lumi --ide", true);
+  });
+
+  context.subscriptions.push(runFile, openIde);
 }
 
 function deactivate() {}

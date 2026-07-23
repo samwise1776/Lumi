@@ -2,7 +2,7 @@
   "name": "lumi-language",
   "displayName": "Lumi Language",
   "description": "Language support and a run command for Lumi source files.",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "publisher": "lumicode",
   "license": "MIT",
   "engines": {
@@ -12,7 +12,8 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "onCommand:lumi.runFile"
+    "onCommand:lumi.runFile",
+    "onCommand:lumi.openIde"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -51,6 +52,10 @@
         "command": "lumi.runFile",
         "title": "Lumi: Run Current File",
         "icon": "$(play)"
+      },
+      {
+        "command": "lumi.openIde",
+        "title": "Lumi: Open IDE"
       }
     ],
     "menus": {
