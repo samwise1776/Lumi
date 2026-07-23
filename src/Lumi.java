@@ -41,7 +41,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 public class Lumi {
-    private static final String VERSION = "0.3.0";
+    private static final String VERSION = "0.3.1";
     private static final Map<String, Object> variables = new HashMap<>();
     private static final Map<String, LumiClass> classes = new HashMap<>();
     private static final Map<String, LumiButton> buttons = new HashMap<>();
@@ -329,10 +329,12 @@ public class Lumi {
         }
 
         Matcher labelCreate = Pattern
-                .compile("Label\\.create\\(\"(.*)\"\\)\\.varname\\(([A-Za-z_]\\w*)\\)\\s*;?")
+                .compile("Label\\.create\\((.+)\\)\\.varname\\(([A-Za-z_]\\w*)\\)\\s*;?")
                 .matcher(line);
         if (labelCreate.matches()) {
-            createLabel(labelCreate.group(2), labelCreate.group(1));
+            createLabel(
+                    labelCreate.group(2),
+                    display(evaluate(labelCreate.group(1), locals)));
             return;
         }
 

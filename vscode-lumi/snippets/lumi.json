@@ -38,9 +38,9 @@
   "Create label": {
     "prefix": "label",
     "body": [
-      "Label.create(\"${1:Hello}\").varname(${2:helloLabel})"
+      "Label.create(${1:\"Hello\"}).varname(${2:helloLabel})"
     ],
-    "description": "Create a named Lumi label"
+    "description": "Create a named Lumi label from text or a variable"
   },
   "Create file": {
     "prefix": "file",
