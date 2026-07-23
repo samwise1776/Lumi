@@ -71,5 +71,19 @@
       "input(\"${1:Enter a value: }\" (${2:value}))"
     ],
     "description": "Prompt for input and store it in a variable"
+  },
+  "Close frame": {
+    "prefix": "close",
+    "body": [
+      "frame.close()"
+    ],
+    "description": "Close the current Lumi frame"
+  },
+  "Delete component": {
+    "prefix": "delete",
+    "body": [
+      "${1:componentName}.delete"
+    ],
+    "description": "Remove a named GUI component"
   }
 }

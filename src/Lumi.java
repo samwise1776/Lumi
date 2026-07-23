@@ -196,6 +196,11 @@ public class Lumi {
             return;
         }
 
+        if (line.matches("frame\\.close\\(\\)\\s*;?")) {
+            closeFrame();
+            return;
+        }
+
         Matcher frameSize = Pattern
                 .compile("frame\\.size\\s*=\\s*(\\d+)\\s*,\\s*(\\d+)\\s*;?")
                 .matcher(line);
@@ -265,6 +270,14 @@ public class Lumi {
                     setPosition.group(1),
                     setPosition.group(2),
                     setPosition.group(3));
+            return;
+        }
+
+        Matcher deleteComponent = Pattern
+                .compile("([A-Za-z_]\\w*)\\.delete(?:\\(\\))?\\s*;?")
+                .matcher(line);
+        if (deleteComponent.matches()) {
+            deleteComponent(deleteComponent.group(1));
             return;
         }
 
@@ -630,6 +643,13 @@ public class Lumi {
         }
     }
 
+    private static void closeFrame() {
+        if (frame != null) {
+            frame.dispose();
+            frame = null;
+        }
+    }
+
     private static void createButton(String name, String text) {
         JButton component = new JButton(text);
         buttons.put(name, new LumiButton(text, component));
@@ -714,6 +734,26 @@ public class Lumi {
         else updated = amount;
         if (axis.equals("X")) component.setLocation(updated, component.getY());
         else component.setLocation(component.getX(), updated);
+    }
+
+    private static void deleteComponent(String name) {
+        JComponent component = components.remove(name);
+        if (component == null) {
+            System.out.println("Unknown component: " + name);
+            return;
+        }
+
+        java.awt.Container parent = component.getParent();
+        if (parent != null) {
+            parent.remove(component);
+            parent.revalidate();
+            parent.repaint();
+        }
+
+        buttons.remove(name);
+        labels.remove(name);
+        textBoxes.remove(name);
+        panels.remove(name);
     }
 
     private static void registerKeyAction(String key, List<String> body) {
