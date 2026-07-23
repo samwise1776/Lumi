@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.GraphicsEnvironment;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.image.BufferedImage;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.ImageIcon;
@@ -186,6 +189,16 @@ public class Lumi {
                 .matcher(line);
         if (input.matches()) {
             variables.put(input.group(2), readInput(interpolate(input.group(1), locals)));
+            return;
+        }
+
+        Matcher notification = Pattern
+                .compile("notify\\(\"(.*)\",\\s*\"(.*)\"\\)\\s*;?")
+                .matcher(line);
+        if (notification.matches()) {
+            sendNotification(
+                    interpolate(notification.group(1), locals),
+                    interpolate(notification.group(2), locals));
             return;
         }
 
@@ -800,6 +813,46 @@ public class Lumi {
         System.out.flush();
         String answer = new BufferedReader(new InputStreamReader(System.in)).readLine();
         return answer == null ? "" : answer;
+    }
+
+    private static void sendNotification(String title, String message) {
+        if (GraphicsEnvironment.isHeadless()) {
+            System.out.println("[" + title + "] " + message);
+            return;
+        }
+
+        if (!SystemTray.isSupported()) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    message,
+                    title,
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        try {
+            SystemTray tray = SystemTray.getSystemTray();
+            java.awt.Image image = frameIconPath != null
+                    ? new ImageIcon(frameIconPath.toString()).getImage()
+                    : new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+            TrayIcon icon = new TrayIcon(image, "Lumi");
+            icon.setImageAutoSize(true);
+            tray.add(icon);
+            icon.displayMessage(title, message, TrayIcon.MessageType.INFO);
+
+            javax.swing.Timer cleanup = new javax.swing.Timer(5000, event -> {
+                tray.remove(icon);
+                ((javax.swing.Timer) event.getSource()).stop();
+            });
+            cleanup.setRepeats(false);
+            cleanup.start();
+        } catch (java.awt.AWTException error) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    message,
+                    title,
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private static final class ArithmeticParser {

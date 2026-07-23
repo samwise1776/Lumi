@@ -85,5 +85,12 @@
       "${1:componentName}.delete"
     ],
     "description": "Remove a named GUI component"
+  },
+  "Send notification": {
+    "prefix": "notify",
+    "body": [
+      "notify(\"${1:Hello}\",\"${2:Hello Ray}\")"
+    ],
+    "description": "Send a desktop notification"
   }
 }

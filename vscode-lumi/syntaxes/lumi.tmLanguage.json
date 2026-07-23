@@ -55,7 +55,7 @@
         },
         {
           "name": "support.function.lumi",
-          "match": "\\b(?:sleep|findval|ctor|create|close|delete|varname|visible|icon|action|listen|add|setX|setY|read|readFor|input)\\b"
+          "match": "\\b(?:sleep|findval|ctor|create|close|delete|varname|visible|icon|action|listen|add|setX|setY|read|readFor|input|notify)\\b"
         },
         {
           "name": "entity.name.function.lumi",
